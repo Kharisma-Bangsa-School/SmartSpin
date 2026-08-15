@@ -1,0 +1,1968 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PutarPintar (Smart Spin) — Video Analyzer Praktikum Gaya Sentripetal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#12161B;
+    --bg-panel:#1B2128;
+    --bg-panel-alt:#232B33;
+    --bg-panel-alt2:#2A333D;
+    --line:#2E3944;
+    --line-soft:#242C34;
+    --text-primary:#E8EDF2;
+    --text-muted:#8894A3;
+    --text-dim:#5B6672;
+    --accent-amber:#FFB454;
+    --accent-amber-dim:#8A6631;
+    --accent-teal:#5EEAD4;
+    --accent-teal-dim:#2E6B63;
+    --danger:#F87171;
+    --danger-dim:#5A2E2E;
+    --radius-lg:14px;
+    --radius-md:10px;
+    --radius-sm:6px;
+    --font-ui:'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-mono:'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 700px at 15% -10%, #1a2029 0%, transparent 60%),
+      radial-gradient(1000px 600px at 100% 0%, #171d24 0%, transparent 55%),
+      var(--bg-deep);
+    color:var(--text-primary);
+    font-family:var(--font-ui);
+    min-height:100vh;
+    padding:28px 20px 60px;
+  }
+
+  .wrap{max-width:1180px;margin:0 auto;}
+
+  /* ---------- Header ---------- */
+  .header{
+    display:flex; align-items:flex-end; justify-content:space-between;
+    gap:20px; margin-bottom:22px; flex-wrap:wrap;
+    border-bottom:1px solid var(--line-soft);
+    padding-bottom:18px;
+  }
+  .header-left .eyebrow{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.16em;
+    color:var(--accent-teal); text-transform:uppercase; margin:0 0 6px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .eyebrow-dot{width:6px;height:6px;border-radius:50%;background:var(--accent-teal);
+    box-shadow:0 0 8px var(--accent-teal);}
+  .header-left h1{
+    font-size:26px; margin:0; font-weight:600; letter-spacing:-0.01em;
+  }
+  .header-left p{margin:6px 0 0; color:var(--text-muted); font-size:13.5px; max-width:560px; line-height:1.5;}
+  .header-right{
+    font-family:var(--font-mono); font-size:11px; color:var(--text-dim);
+    text-align:right; line-height:1.6;
+  }
+  .header-right b{color:var(--text-muted); font-weight:500;}
+
+  /* ---------- Layout ---------- */
+  .grid{
+    display:grid; grid-template-columns: 1.35fr 1fr; gap:18px;
+  }
+  @media (max-width: 880px){ .grid{grid-template-columns: 1fr;} }
+
+  .panel{
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius-lg);
+    padding:18px;
+  }
+  .panel + .panel{margin-top:18px;}
+  .panel-title{
+    font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--text-muted); font-weight:600; margin:0 0 12px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+
+  /* ---------- Upload zone ---------- */
+  .dropzone{
+    border:1.5px dashed var(--line);
+    border-radius:var(--radius-md);
+    padding:46px 20px;
+    text-align:center;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+    background:var(--bg-panel-alt);
+  }
+  .dropzone:hover, .dropzone.dragover{
+    border-color:var(--accent-teal);
+    background:#1c2830;
+  }
+  .dropzone svg{opacity:.55; margin-bottom:10px;}
+  .dropzone .dz-title{font-size:14.5px; font-weight:500; color:var(--text-primary);}
+  .dropzone .dz-sub{font-size:12.5px; color:var(--text-dim); margin-top:4px;}
+  input[type=file]{display:none;}
+
+  /* ---------- Video area ---------- */
+  .video-shell{
+    position:relative; border-radius:var(--radius-md); overflow:hidden;
+    background:#000; border:1px solid var(--line);
+  }
+  video{width:100%; display:block; max-height:420px; background:#000; object-fit:contain;}
+  #roiCanvas{
+    position:absolute; inset:0; width:100%; height:100%;
+    cursor:crosshair; touch-action:none;
+  }
+
+  .seek-row{display:flex; align-items:center; gap:10px; margin-top:12px;}
+  .time-mono{font-family:var(--font-mono); font-size:12px; color:var(--text-muted); white-space:nowrap;}
+  input[type=range]{
+    -webkit-appearance:none; appearance:none; width:100%; height:4px;
+    background:var(--line); border-radius:3px; outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:14px; height:14px; border-radius:50%;
+    background:var(--accent-teal); cursor:pointer; border:2px solid #0d1216;
+    box-shadow:0 0 0 3px rgba(94,234,212,.15);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:14px; height:14px; border-radius:50%; background:var(--accent-teal);
+    cursor:pointer; border:2px solid #0d1216;
+  }
+
+  .controls-row{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:10px; margin-top:14px; flex-wrap:wrap;
+  }
+  .btn-group{display:flex; gap:6px; align-items:center;}
+  .btn{
+    font-family:var(--font-ui); font-size:12.5px; font-weight:500;
+    color:var(--text-primary); background:var(--bg-panel-alt2);
+    border:1px solid var(--line); border-radius:var(--radius-sm);
+    padding:7px 11px; cursor:pointer; transition:all .12s ease;
+    display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
+  }
+  .btn:hover{border-color:var(--accent-teal); color:var(--accent-teal);}
+  .btn:active{transform:translateY(1px);}
+  .btn.icon-btn{padding:7px 9px;}
+  .btn.active{
+    background:var(--accent-teal-dim); border-color:var(--accent-teal); color:var(--accent-teal);
+  }
+  .btn.danger:hover{border-color:var(--danger); color:var(--danger);}
+  .btn:disabled{opacity:.35; cursor:not-allowed; pointer-events:none;}
+
+  .speed-label{font-size:11px; color:var(--text-dim); margin-right:2px; font-family:var(--font-mono);}
+
+  .fps-inline{display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-dim); font-family:var(--font-mono);}
+  .fps-inline input{
+    width:52px; background:var(--bg-panel-alt2); border:1px solid var(--line);
+    color:var(--text-primary); border-radius:var(--radius-sm); padding:5px 6px;
+    font-family:var(--font-mono); font-size:12px; text-align:center;
+  }
+
+  /* ---------- Mark button ---------- */
+  .mark-zone{
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    margin-top:20px; padding-top:18px; border-top:1px solid var(--line-soft);
+  }
+  .mark-btn{
+    width:86px; height:86px; border-radius:50%;
+    background:radial-gradient(circle at 32% 28%, #ff6a5e, #e0332a 70%);
+    border:3px solid #7a1712;
+    box-shadow:0 6px 0 #7a1712, 0 8px 18px rgba(224,51,42,.35);
+    cursor:pointer; color:white; font-family:var(--font-ui); font-weight:700;
+    font-size:12.5px; letter-spacing:.04em; text-transform:uppercase;
+    transition:transform .06s ease, box-shadow .06s ease;
+  }
+  .mark-btn:hover{filter:brightness(1.06);}
+  .mark-btn:active, .mark-btn.pressed{
+    transform:translateY(5px);
+    box-shadow:0 1px 0 #7a1712, 0 3px 8px rgba(224,51,42,.35);
+  }
+  .mark-btn:disabled{
+    background:#3a3f45; border-color:#22262b; box-shadow:0 6px 0 #22262b;
+    cursor:not-allowed; color:var(--text-dim);
+  }
+  .mark-hint{font-family:var(--font-mono); font-size:11px; color:var(--text-dim);}
+  .mark-hint kbd{
+    background:var(--bg-panel-alt2); border:1px solid var(--line); border-radius:4px;
+    padding:1px 6px; font-family:var(--font-mono); color:var(--text-muted);
+  }
+
+  /* ---------- Readout ---------- */
+  .readout-card{
+    background:linear-gradient(180deg, #1a2129, #161c22);
+    border:1px solid var(--line); border-radius:var(--radius-md);
+    padding:18px 20px; text-align:center; position:relative; overflow:hidden;
+  }
+  .readout-card::before{
+    content:""; position:absolute; inset:0;
+    background:repeating-linear-gradient(0deg, rgba(255,255,255,.015) 0px, rgba(255,255,255,.015) 1px, transparent 1px, transparent 3px);
+    pointer-events:none;
+  }
+  .readout-label{
+    font-family:var(--font-mono); font-size:10.5px; letter-spacing:.16em;
+    color:var(--text-dim); text-transform:uppercase; margin-bottom:6px;
+  }
+  .readout-value{
+    font-family:var(--font-mono); font-size:46px; font-weight:600;
+    color:var(--accent-amber); letter-spacing:.01em; line-height:1.05;
+    text-shadow:0 0 22px rgba(255,180,84,.35);
+    font-variant-numeric: tabular-nums;
+  }
+  .readout-unit{font-size:19px; color:var(--accent-amber-dim); margin-left:6px;}
+  .readout-sub{font-family:var(--font-mono); font-size:11.5px; color:var(--text-dim); margin-top:8px;}
+
+  .stat-strip{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:14px;
+  }
+  .stat-box{
+    background:var(--bg-panel-alt); border:1px solid var(--line-soft);
+    border-radius:var(--radius-sm); padding:9px 10px; text-align:center;
+  }
+  .stat-box .k{font-family:var(--font-mono); font-size:9.5px; color:var(--text-dim); letter-spacing:.08em; text-transform:uppercase;}
+  .stat-box .v{font-family:var(--font-mono); font-size:15px; color:var(--text-primary); margin-top:3px; font-weight:600;}
+
+  /* ---------- Marks log ---------- */
+  .log-list{max-height:200px; overflow-y:auto; margin-top:4px;}
+  .log-row{
+    display:grid; grid-template-columns:28px 1fr 1fr 22px;
+    align-items:center; gap:8px;
+    padding:6px 4px; border-bottom:1px solid var(--line-soft);
+    font-family:var(--font-mono); font-size:12px;
+  }
+  .log-row:last-child{border-bottom:none;}
+  .log-row .idx{color:var(--text-dim);}
+  .log-row .t{color:var(--text-primary);}
+  .log-row .d{color:var(--accent-teal);}
+  .log-row .rm{
+    color:var(--text-dim); cursor:pointer; text-align:center; border-radius:4px;
+  }
+  .log-row .rm:hover{color:var(--danger); background:var(--danger-dim);}
+  .log-empty{
+    color:var(--text-dim); font-size:12.5px; text-align:center; padding:18px 6px;
+    font-family:var(--font-mono);
+  }
+  .log-actions{display:flex; gap:8px; margin-top:10px;}
+
+  /* ---------- Calculator ---------- */
+  .calc-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .field{display:flex; flex-direction:column; gap:5px;}
+  .field label{font-size:11px; color:var(--text-dim); font-family:var(--font-mono);}
+  .field .input-unit{position:relative;}
+  .field input{
+    width:100%; background:var(--bg-panel-alt2); border:1px solid var(--line);
+    color:var(--text-primary); border-radius:var(--radius-sm); padding:8px 34px 8px 10px;
+    font-family:var(--font-mono); font-size:13.5px;
+  }
+  .field input:focus{outline:none; border-color:var(--accent-teal);}
+  .field .unit-tag{
+    position:absolute; right:9px; top:50%; transform:translateY(-50%);
+    font-size:11px; color:var(--text-dim); font-family:var(--font-mono);
+  }
+
+  .calc-results{
+    margin-top:14px; display:grid; grid-template-columns:1fr 1fr; gap:10px;
+  }
+  .result-box{
+    background:var(--bg-panel-alt); border:1px solid var(--line-soft);
+    border-radius:var(--radius-sm); padding:10px 12px;
+  }
+  .result-box .k{font-size:10.5px; color:var(--text-dim); font-family:var(--font-mono); letter-spacing:.05em;}
+  .result-box .v{font-family:var(--font-mono); font-size:18px; color:var(--accent-teal); font-weight:600; margin-top:3px;}
+  .result-box .v small{font-size:11px; color:var(--text-dim); font-weight:400;}
+
+  .copy-row{margin-top:14px; display:flex; gap:8px; align-items:center;}
+  .copy-feedback{font-size:11.5px; color:var(--accent-teal); font-family:var(--font-mono); opacity:0; transition:opacity .2s ease;}
+  .copy-feedback.show{opacity:1;}
+
+  .footer-note{
+    margin-top:22px; font-size:11.5px; color:var(--text-dim); line-height:1.6;
+    border-top:1px solid var(--line-soft); padding-top:14px;
+  }
+  .footer-note b{color:var(--text-muted);}
+
+  /* ---------- Auto-detect panel ---------- */
+  .ad-instructions{
+    font-size:12.5px; color:var(--text-muted); line-height:1.55; margin:0 0 12px;
+  }
+  .ad-instructions b{color:var(--text-primary);}
+
+  .mode-toggle{
+    display:flex; gap:6px; margin-bottom:12px; background:var(--bg-panel-alt);
+    padding:4px; border-radius:var(--radius-sm); border:1px solid var(--line-soft);
+  }
+  .mode-btn{
+    flex:1; font-family:var(--font-ui); font-size:11.5px; font-weight:600;
+    color:var(--text-muted); background:transparent; border:none; border-radius:6px;
+    padding:9px 8px; cursor:pointer; transition:all .12s ease; text-align:center;
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+  }
+  .mode-btn .mode-tag{font-size:9px; font-weight:400; color:var(--text-dim); text-transform:none; letter-spacing:0;}
+  .mode-btn:hover{color:var(--text-primary);}
+  .mode-btn.active{background:var(--accent-teal-dim); color:var(--accent-teal);}
+  .mode-btn.active .mode-tag{color:var(--accent-teal); opacity:.8;}
+
+  .cs-hint{font-size:11px; color:var(--text-dim); line-height:1.5; margin:6px 0 4px;}
+  .cs-btn{padding:6px 10px; font-size:11.5px;}
+  .roi-status{
+    display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono);
+    font-size:11.5px; padding:4px 9px; border-radius:20px; border:1px solid var(--line);
+    color:var(--text-dim); background:var(--bg-panel-alt);
+  }
+  .roi-status.set{ color:var(--accent-teal); border-color:var(--accent-teal-dim); background:#16302c; }
+  .roi-status .dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+
+  .ad-row{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:12px 0;}
+  .ad-range{display:flex; align-items:center; gap:8px;}
+  .ad-range input{
+    width:64px; background:var(--bg-panel-alt2); border:1px solid var(--line);
+    color:var(--text-primary); border-radius:var(--radius-sm); padding:6px 7px;
+    font-family:var(--font-mono); font-size:12px; text-align:center;
+  }
+  .ad-range span{color:var(--text-dim); font-family:var(--font-mono); font-size:11.5px;}
+
+  .slider-field{margin:10px 0;}
+  .slider-field .sf-label{
+    display:flex; justify-content:space-between; font-family:var(--font-mono);
+    font-size:11px; color:var(--text-dim); margin-bottom:5px;
+  }
+  .slider-field .sf-label b{color:var(--accent-teal); font-weight:600;}
+
+  .ad-run-row{display:flex; gap:8px; margin-top:14px;}
+  .btn.primary{
+    background:var(--accent-teal-dim); border-color:var(--accent-teal); color:var(--accent-teal);
+  }
+  .btn.primary:hover{background:#245952;}
+  .btn.wide{flex:1; justify-content:center; padding:10px 12px; font-size:13px;}
+
+  .progress-wrap{margin-top:12px; display:none;}
+  .progress-wrap.show{display:block;}
+  .progress-track{
+    height:6px; border-radius:4px; background:var(--bg-panel-alt2);
+    overflow:hidden; border:1px solid var(--line-soft);
+  }
+  .progress-fill{
+    height:100%; width:0%; background:linear-gradient(90deg, var(--accent-teal-dim), var(--accent-teal));
+    transition:width .08s linear;
+  }
+  .progress-text{
+    font-family:var(--font-mono); font-size:11px; color:var(--text-dim); margin-top:6px;
+    display:flex; justify-content:space-between;
+  }
+
+  .chart-wrap{margin-top:14px; display:none;}
+  .chart-wrap.show{display:block;}
+  #signalChart{width:100%; height:90px; display:block; border-radius:var(--radius-sm); background:var(--bg-panel-alt); border:1px solid var(--line-soft);}
+  #periodChart{width:100%; height:90px; display:block; border-radius:var(--radius-sm); background:var(--bg-panel-alt); border:1px solid var(--line-soft);}
+  .chart-caption{font-family:var(--font-mono); font-size:10.5px; color:var(--text-dim); margin-top:5px;}
+
+  .ad-result{
+    margin-top:12px; padding:10px 12px; border-radius:var(--radius-sm);
+    background:#16302c; border:1px solid var(--accent-teal-dim);
+    color:var(--accent-teal); font-size:12.5px; display:none; line-height:1.5;
+  }
+  .ad-result.show{display:block;}
+  .ad-result.warn{ background:#332217; border-color:#7a5a2e; color:var(--accent-amber); }
+  .fit-quality{
+    display:inline-flex; align-items:center; gap:5px; font-family:var(--font-mono);
+    font-size:11px; padding:2px 8px; border-radius:10px; margin-left:6px;
+    background:rgba(94,234,212,0.12); border:1px solid var(--accent-teal-dim);
+  }
+  .fit-quality.mid{background:rgba(255,180,84,0.12); border-color:var(--accent-amber-dim); color:var(--accent-amber);}
+  .fit-quality.low{background:rgba(248,113,113,0.12); border-color:#7a3a3a; color:var(--danger);}
+
+
+  ::-webkit-scrollbar{width:8px; height:8px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--line); border-radius:4px;}
+
+  :focus-visible{outline:2px solid var(--accent-teal); outline-offset:2px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div class="header-left">
+      <p class="eyebrow"><span class="eyebrow-dot"></span>Video analyzer praktikum gaya sentripetal · AI tracker</p>
+      <h1>PutarPintar <span style="color:var(--text-dim); font-weight:400;">(Smart Spin)</span></h1>
+      <p>Upload video eksperimen bandul berputarmu, tandai titik lintasan yang dilewati tiap putaran, lalu tekan Run — PutarPintar akan memutar videonya sekali dan menghitung sendiri setiap putaran untuk kamu. Periode rata-rata (T) — plus v dan F<sub>s</sub> kalau kamu isi r dan m — langsung dihitung otomatis.</p>
+    </div>
+    <div class="header-right">
+      <div><b>Berjalan 100% di browser kamu</b></div>
+      <div>Video tidak pernah diunggah ke mana pun</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- LEFT: video -->
+    <div>
+      <div class="panel" id="uploadPanel">
+        <p class="panel-title">01 — Load video</p>
+        <div class="dropzone" id="dropzone">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#8894A3" stroke-width="1.5"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+          <div class="dz-title">Drop a video here, or click to choose a file</div>
+          <div class="dz-sub">MP4, MOV, WebM — processed locally, nothing is uploaded</div>
+        </div>
+        <input type="file" id="fileInput" accept="video/*">
+      </div>
+
+      <div class="panel" id="videoPanel" style="display:none;">
+        <p class="panel-title">01 — Video <span id="fileNameTag" style="color:var(--text-dim); font-weight:400; text-transform:none; letter-spacing:0;"></span></p>
+        <div class="video-shell">
+          <video id="video" playsinline></video>
+          <canvas id="roiCanvas"></canvas>
+        </div>
+
+        <div class="seek-row">
+          <span class="time-mono" id="curTime">0:00.000</span>
+          <input type="range" id="seek" min="0" max="1000" value="0" step="1">
+          <span class="time-mono" id="durTime">0:00.000</span>
+        </div>
+
+        <div class="controls-row">
+          <div class="btn-group">
+            <button class="btn icon-btn" id="stepBackFrame" title="Previous frame">⏮ 1f</button>
+            <button class="btn icon-btn" id="stepBack" title="Back 0.05s">−0.05s</button>
+            <button class="btn" id="playPause">▶ Play</button>
+            <button class="btn icon-btn" id="stepFwd" title="Forward 0.05s">+0.05s</button>
+            <button class="btn icon-btn" id="stepFwdFrame" title="Next frame">1f ⏭</button>
+          </div>
+        </div>
+
+        <div class="controls-row">
+          <div class="btn-group">
+            <span class="speed-label">SPEED</span>
+            <button class="btn speed-btn" data-speed="0.1">0.1×</button>
+            <button class="btn speed-btn" data-speed="0.25">0.25×</button>
+            <button class="btn speed-btn" data-speed="0.5">0.5×</button>
+            <button class="btn speed-btn active" data-speed="1">1×</button>
+          </div>
+          <div class="fps-inline">
+            <span>ASSUMED FPS</span>
+            <input type="number" id="fpsInput" value="30" min="1" max="960" step="1">
+          </div>
+        </div>
+
+        <div class="mark-zone">
+          <button class="mark-btn" id="markBtn" disabled>Mark<br>Lap</button>
+          <div class="mark-hint">Manual mode — press <kbd>Space</kbd> or click on each revolution (or use Auto-detect below)</div>
+        </div>
+      </div>
+
+      <div class="panel" id="autoDetectPanel" style="display:none;">
+        <p class="panel-title">02 — Auto-detect revolutions</p>
+
+        <div class="mode-toggle" id="modeToggle">
+          <button class="mode-btn active" data-mode="circle">🔄 Smart tracking <span class="mode-tag">adapts to imperfect paths & speed changes</span></button>
+          <button class="mode-btn" data-mode="point">🎯 Point crossing</button>
+        </div>
+
+        <p class="ad-instructions" id="pointInstructions" style="display:none;">
+          Drag a small box on the video over the spot the mass crosses each revolution (a high-contrast point works best). Then run Auto-detect — it plays through the video once and finds every crossing for you.
+        </p>
+        <p class="ad-instructions" id="circleInstructions">
+          Click roughly on the <b>center</b> of the circular path, then drag out to the mass itself — this is just a starting guess. The tracker follows the mass frame-by-frame from there and fits the real path afterward, so it copes with hand shake, an off-center guess, or a path that isn't a perfect circle.
+          <br><b>Tip:</b> for outdoor or busy-background footage, trim FROM/TO to a short, clean 2–3 second stretch (roughly 5–8 revolutions) rather than the whole clip — a shorter, uncluttered segment tracks far more reliably than one long clip with people or traffic moving in the background.
+        </p>
+
+        <div class="ad-row">
+          <span class="roi-status" id="roiStatus"><span class="dot"></span><span id="roiStatusText">No tracking point selected</span></span>
+          <button class="btn icon-btn" id="clearRoiBtn" disabled>Clear</button>
+        </div>
+
+        <div class="slider-field" id="ringThicknessField">
+          <div class="sf-label"><span>Object size (tracking tolerance)</span><b id="ringLabel">18 px</b></div>
+          <input type="range" id="ringSlider" min="6" max="50" step="1" value="18">
+        </div>
+
+        <div class="ad-row">
+          <div class="ad-range">
+            <span>FROM</span>
+            <input type="number" id="rangeStart" value="0" min="0" step="0.1">
+            <span>s</span>
+          </div>
+          <div class="ad-range">
+            <span>TO</span>
+            <input type="number" id="rangeEnd" value="0" min="0" step="0.1">
+            <span>s</span>
+          </div>
+        </div>
+
+        <div class="slider-field" id="pointOnlyFields">
+          <div class="sf-label"><span>Sensitivity</span><b id="sensLabel">1.2×</b></div>
+          <input type="range" id="sensSlider" min="0.5" max="3" step="0.1" value="1.2">
+          <div class="sf-label" style="margin-top:8px;"><span>Minimum time between revolutions</span><b id="gapLabel">0.20 s</b></div>
+          <input type="range" id="gapSlider" min="0.05" max="2" step="0.05" value="0.2">
+        </div>
+
+        <div class="ad-row">
+          <div class="fps-inline" style="margin:0;">
+            <span>CAPTURE SPEED</span>
+          </div>
+          <div class="btn-group" id="captureSpeedGroup">
+            <button class="btn cs-btn" data-cs="1">1×</button>
+            <button class="btn cs-btn active" data-cs="0.5">0.5×</button>
+            <button class="btn cs-btn" data-cs="0.25">0.25×</button>
+          </div>
+        </div>
+        <div class="cs-hint">Slower capture = the browser decodes every single frame instead of skipping any — important for fast-spinning objects.</div>
+
+        <div class="ad-run-row">
+          <button class="btn primary wide" id="runAutoBtn" disabled>▶ Run Auto-detect</button>
+          <button class="btn danger" id="stopAutoBtn" style="display:none;">Stop</button>
+        </div>
+
+        <div class="progress-wrap" id="progressWrap">
+          <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+          <div class="progress-text"><span id="progressStatus">Analyzing…</span><span id="progressPct">0%</span></div>
+        </div>
+
+        <div class="chart-wrap" id="chartWrap">
+          <canvas id="signalChart" width="600" height="90"></canvas>
+          <div class="chart-caption" id="chartCaption">Brightness at tracking point over time — dots mark detected revolutions</div>
+        </div>
+
+        <div class="chart-wrap" id="periodChartWrap">
+          <canvas id="periodChart" width="600" height="90"></canvas>
+          <div class="chart-caption">Period per revolution — flat is steady speed, sloped means speeding up/slowing down</div>
+        </div>
+
+        <div class="ad-result" id="adResult"></div>
+
+      </div>
+    </div>
+
+    <!-- RIGHT: readout + calculator -->
+    <div>
+      <div class="panel">
+        <p class="panel-title">03 — Period readout</p>
+        <div class="readout-card">
+          <div class="readout-label">Average period · T</div>
+          <div><span class="readout-value" id="tReadout">—</span><span class="readout-unit">s</span></div>
+          <div class="readout-sub" id="tSub">mark at least 2 revolutions to begin</div>
+        </div>
+        <div class="stat-strip">
+          <div class="stat-box"><div class="k">Revolutions (n)</div><div class="v" id="statN">—</div></div>
+          <div class="stat-box"><div class="k">Total time (t)</div><div class="v" id="statT">—</div></div>
+          <div class="stat-box"><div class="k">Std. dev (σ)</div><div class="v" id="statSD">—</div></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <p class="panel-title">04 — Marks log</p>
+        <div class="log-list" id="logList">
+          <div class="log-empty">No marks yet</div>
+        </div>
+        <div class="log-actions">
+          <button class="btn danger" id="undoBtn" disabled>Undo last</button>
+          <button class="btn danger" id="clearBtn" disabled>Clear all</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <p class="panel-title">05 — Calculator (optional)</p>
+        <div class="calc-grid">
+          <div class="field">
+            <label>Radius, r</label>
+            <div class="input-unit"><input type="number" id="rInput" placeholder="e.g. 25" step="any"><span class="unit-tag">cm</span></div>
+          </div>
+          <div class="field">
+            <label>Whirling mass, m</label>
+            <div class="input-unit"><input type="number" id="mInput" placeholder="e.g. 30" step="any"><span class="unit-tag">g</span></div>
+          </div>
+        </div>
+        <div class="calc-results">
+          <div class="result-box"><div class="k">v = 2πr / T</div><div class="v" id="vOut">—<small> m/s</small></div></div>
+          <div class="result-box"><div class="k">F<sub>s</sub> = mv²/r</div><div class="v" id="fsOut">—<small> N</small></div></div>
+        </div>
+        <div class="copy-row">
+          <button class="btn" id="copyBtn">Copy row for worksheet</button>
+          <span class="copy-feedback" id="copyFeedback">Copied ✓</span>
+        </div>
+      </div>
+
+      <div class="footer-note">
+        <b>Tip.</b> Auto-detect handles the counting for you — just drag a box over the crossing point and press Run. If it misses a beat or double-counts, fine-tune the sensitivity/gap sliders and run again, or fix individual marks by hand in the log.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const video = document.getElementById('video');
+  const roiCanvas = document.getElementById('roiCanvas');
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  const uploadPanel = document.getElementById('uploadPanel');
+  const videoPanel = document.getElementById('videoPanel');
+  const autoDetectPanel = document.getElementById('autoDetectPanel');
+  const fileNameTag = document.getElementById('fileNameTag');
+
+  const seek = document.getElementById('seek');
+  const curTime = document.getElementById('curTime');
+  const durTime = document.getElementById('durTime');
+  const playPause = document.getElementById('playPause');
+  const stepBackFrame = document.getElementById('stepBackFrame');
+  const stepFwdFrame = document.getElementById('stepFwdFrame');
+  const stepBack = document.getElementById('stepBack');
+  const stepFwd = document.getElementById('stepFwd');
+  const fpsInput = document.getElementById('fpsInput');
+  const speedBtns = document.querySelectorAll('.speed-btn');
+  const markBtn = document.getElementById('markBtn');
+
+  const tReadout = document.getElementById('tReadout');
+  const tSub = document.getElementById('tSub');
+  const statN = document.getElementById('statN');
+  const statT = document.getElementById('statT');
+  const statSD = document.getElementById('statSD');
+
+  const logList = document.getElementById('logList');
+  const undoBtn = document.getElementById('undoBtn');
+  const clearBtn = document.getElementById('clearBtn');
+
+  const rInput = document.getElementById('rInput');
+  const mInput = document.getElementById('mInput');
+  const vOut = document.getElementById('vOut');
+  const fsOut = document.getElementById('fsOut');
+  const copyBtn = document.getElementById('copyBtn');
+  const copyFeedback = document.getElementById('copyFeedback');
+
+  const roiStatus = document.getElementById('roiStatus');
+  const roiStatusText = document.getElementById('roiStatusText');
+  const clearRoiBtn = document.getElementById('clearRoiBtn');
+  const rangeStart = document.getElementById('rangeStart');
+  const rangeEnd = document.getElementById('rangeEnd');
+  const sensSlider = document.getElementById('sensSlider');
+  const sensLabel = document.getElementById('sensLabel');
+  const gapSlider = document.getElementById('gapSlider');
+  const gapLabel = document.getElementById('gapLabel');
+  const runAutoBtn = document.getElementById('runAutoBtn');
+  const stopAutoBtn = document.getElementById('stopAutoBtn');
+  const progressWrap = document.getElementById('progressWrap');
+  const progressFill = document.getElementById('progressFill');
+  const progressStatus = document.getElementById('progressStatus');
+  const progressPct = document.getElementById('progressPct');
+  const chartWrap = document.getElementById('chartWrap');
+  const periodChartWrap = document.getElementById('periodChartWrap');
+  const periodChart = document.getElementById('periodChart');
+  const signalChart = document.getElementById('signalChart');
+  const adResult = document.getElementById('adResult');
+
+  let marks = [];       // seconds, ascending
+  let seeking = false;
+  let seekLock = false;
+  let currentT = null;  // last computed average period
+
+  // ---------- helpers ----------
+  function fmtTime(s){
+    if (!isFinite(s)) return "0:00.000";
+    const m = Math.floor(s/60);
+    const rem = s - m*60;
+    return m + ":" + rem.toFixed(3).padStart(6,"0");
+  }
+  function clamp(x,lo,hi){ return Math.max(lo, Math.min(hi, x)); }
+
+  // ---------- file loading ----------
+  function loadFile(file){
+    if (!file || !file.type.startsWith('video/')) return;
+    const url = URL.createObjectURL(file);
+    video.src = url;
+    fileNameTag.textContent = "— " + file.name;
+    uploadPanel.style.display = 'none';
+    videoPanel.style.display = 'block';
+    autoDetectPanel.style.display = 'block';
+    marks = [];
+    roi = null;
+    circleParams = null;
+    updateTrackingStatus();
+    resetAutoDetectUI();
+    renderMarks();
+    renderStats();
+  }
+
+  dropzone.addEventListener('click', ()=> fileInput.click());
+  fileInput.addEventListener('change', e=>{
+    if (e.target.files && e.target.files[0]) loadFile(e.target.files[0]);
+  });
+  ['dragenter','dragover'].forEach(evt=>{
+    dropzone.addEventListener(evt, e=>{ e.preventDefault(); dropzone.classList.add('dragover'); });
+  });
+  ['dragleave','drop'].forEach(evt=>{
+    dropzone.addEventListener(evt, e=>{ e.preventDefault(); dropzone.classList.remove('dragover'); });
+  });
+  dropzone.addEventListener('drop', e=>{
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (file) loadFile(file);
+  });
+
+  // ---------- video metadata / time sync ----------
+  video.addEventListener('loadedmetadata', ()=>{
+    seek.max = Math.floor(video.duration*1000);
+    durTime.textContent = fmtTime(video.duration);
+    markBtn.disabled = false;
+    rangeStart.value = 0;
+    rangeEnd.value = Math.round(video.duration*10)/10;
+    rangeStart.max = video.duration;
+    rangeEnd.max = video.duration;
+    sizeRoiCanvas();
+  });
+
+  window.addEventListener('resize', sizeRoiCanvas);
+
+  video.addEventListener('timeupdate', ()=>{
+    if (!seeking){
+      seek.value = Math.floor(video.currentTime*1000);
+    }
+    curTime.textContent = fmtTime(video.currentTime);
+  });
+
+  video.addEventListener('ended', ()=>{
+    if (autoRunning) finishAutoDetect();
+  });
+  video.addEventListener('play', ()=>{ playPause.textContent = "⏸ Pause"; });
+  video.addEventListener('pause', ()=>{ playPause.textContent = "▶ Play"; });
+
+  seek.addEventListener('input', ()=>{
+    seeking = true;
+    const t = seek.value/1000;
+    curTime.textContent = fmtTime(t);
+  });
+  seek.addEventListener('change', ()=>{
+    video.currentTime = seek.value/1000;
+    seeking = false;
+  });
+
+  playPause.addEventListener('click', ()=>{
+    if (video.paused) video.play(); else video.pause();
+  });
+
+  function seekBy(delta){
+    if (!video.duration) return;
+    video.pause();
+    video.currentTime = clamp(video.currentTime + delta, 0, video.duration);
+  }
+  stepBack.addEventListener('click', ()=> seekBy(-0.05));
+  stepFwd.addEventListener('click', ()=> seekBy(0.05));
+  stepBackFrame.addEventListener('click', ()=>{
+    const fps = Math.max(1, parseFloat(fpsInput.value) || 30);
+    seekBy(-1/fps);
+  });
+  stepFwdFrame.addEventListener('click', ()=>{
+    const fps = Math.max(1, parseFloat(fpsInput.value) || 30);
+    seekBy(1/fps);
+  });
+
+  speedBtns.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      speedBtns.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      video.playbackRate = parseFloat(btn.dataset.speed);
+    });
+  });
+
+  // ---------- marking ----------
+  function markLap(){
+    if (markBtn.disabled || !video.duration) return;
+    const t = video.currentTime;
+    marks.push(t);
+    marks.sort((a,b)=>a-b);
+    renderMarks();
+    renderStats();
+    markBtn.classList.add('pressed');
+    setTimeout(()=>markBtn.classList.remove('pressed'), 120);
+  }
+  markBtn.addEventListener('click', markLap);
+
+  document.addEventListener('keydown', e=>{
+    const tag = (document.activeElement && document.activeElement.tagName) || "";
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (e.code === 'Space'){
+      e.preventDefault();
+      markLap();
+    }
+  });
+
+  undoBtn.addEventListener('click', ()=>{
+    marks.pop();
+    renderMarks();
+    renderStats();
+  });
+  clearBtn.addEventListener('click', ()=>{
+    marks = [];
+    renderMarks();
+    renderStats();
+  });
+
+  function removeMarkAt(idx){
+    marks.splice(idx,1);
+    renderMarks();
+    renderStats();
+  }
+
+  function renderMarks(){
+    undoBtn.disabled = marks.length === 0;
+    clearBtn.disabled = marks.length === 0;
+
+    if (marks.length === 0){
+      logList.innerHTML = '<div class="log-empty">No marks yet</div>';
+      return;
+    }
+    let html = "";
+    marks.forEach((t, i)=>{
+      const delta = i === 0 ? "–" : (t - marks[i-1]).toFixed(3) + "s";
+      html += `<div class="log-row">
+        <span class="idx">#${i+1}</span>
+        <span class="t">${fmtTime(t)}</span>
+        <span class="d">${delta}</span>
+        <span class="rm" data-idx="${i}" title="Remove">✕</span>
+      </div>`;
+    });
+    logList.innerHTML = html;
+    logList.querySelectorAll('.rm').forEach(el=>{
+      el.addEventListener('click', ()=> removeMarkAt(parseInt(el.dataset.idx,10)));
+    });
+    logList.scrollTop = logList.scrollHeight;
+  }
+
+  function renderStats(){
+    if (marks.length < 2){
+      tReadout.textContent = "—";
+      tSub.textContent = "mark at least 2 revolutions to begin";
+      statN.textContent = "—";
+      statT.textContent = "—";
+      statSD.textContent = "—";
+      currentT = null;
+      updateCalculator();
+      return;
+    }
+    const deltas = [];
+    for (let i=1;i<marks.length;i++) deltas.push(marks[i]-marks[i-1]);
+    const n = deltas.length;
+    const t = marks[marks.length-1] - marks[0];
+    const T = t/n;
+    const mean = T;
+    const variance = deltas.reduce((s,d)=> s + (d-mean)*(d-mean), 0) / n;
+    const sd = Math.sqrt(variance);
+
+    tReadout.textContent = T.toFixed(3);
+    tSub.textContent = `from ${n} revolution${n>1?'s':''} · avg of consecutive intervals`;
+    statN.textContent = n;
+    statT.textContent = t.toFixed(3) + " s";
+    statSD.textContent = "±" + sd.toFixed(3) + " s";
+
+    currentT = T;
+    updateCalculator();
+  }
+
+  // ---------- calculator ----------
+  function updateCalculator(){
+    const rCm = parseFloat(rInput.value);
+    const mG = parseFloat(mInput.value);
+    if (!currentT || !isFinite(rCm) || !isFinite(mG) || rCm<=0 || mG<=0){
+      vOut.innerHTML = "—<small> m/s</small>";
+      fsOut.innerHTML = "—<small> N</small>";
+      return;
+    }
+    const r = rCm/100;      // m
+    const m = mG/1000;      // kg
+    const v = (2*Math.PI*r)/currentT;
+    const fs = (m*v*v)/r;
+    vOut.innerHTML = v.toFixed(3) + "<small> m/s</small>";
+    fsOut.innerHTML = fs.toFixed(4) + "<small> N</small>";
+  }
+  rInput.addEventListener('input', updateCalculator);
+  mInput.addEventListener('input', updateCalculator);
+
+  // ---------- copy ----------
+  copyBtn.addEventListener('click', async ()=>{
+    if (marks.length < 2){
+      flashCopy("Add marks first");
+      return;
+    }
+    const n = marks.length - 1;
+    const t = (marks[marks.length-1] - marks[0]).toFixed(3);
+    const T = currentT.toFixed(3);
+    const v = vOut.textContent.replace(/[^0-9.\-]/g,'') || "";
+    const fs = fsOut.textContent.replace(/[^0-9.\-]/g,'') || "";
+    const row = [n, t, T, v, fs].join("\t");
+    try{
+      await navigator.clipboard.writeText(row);
+      flashCopy("Copied ✓");
+    }catch(err){
+      flashCopy("Copy failed — select manually");
+    }
+  });
+  function flashCopy(msg){
+    copyFeedback.textContent = msg;
+    copyFeedback.classList.add('show');
+    setTimeout(()=>copyFeedback.classList.remove('show'), 1600);
+  }
+
+  // =====================================================================
+  // AUTO-DETECT: dual-mode tracking (point-crossing / full-circle regression)
+  // =====================================================================
+  let trackMode = 'circle';   // 'circle' | 'point'
+  let roi = null;             // {x,y,w,h} in VIDEO pixel space (point mode)
+  let circleParams = null;    // {cx,cy,r} in VIDEO pixel space (circle mode)
+  let selecting = false;
+  let selStart = null;        // {x,y} in canvas CSS-pixel space
+  let selCurrent = null;
+  let autoRunning = false;
+  let stopRequested = false;
+  let signal = [];            // point mode: [{t,b}]
+  let captureSpeed = 0.5;
+  let savedPlaybackRate = 1;
+  const roiCtx = roiCanvas.getContext('2d');
+
+  const modeToggle = document.getElementById('modeToggle');
+  const pointInstructions = document.getElementById('pointInstructions');
+  const circleInstructions = document.getElementById('circleInstructions');
+  const ringThicknessField = document.getElementById('ringThicknessField');
+  const ringSlider = document.getElementById('ringSlider');
+  const ringLabel = document.getElementById('ringLabel');
+  const pointOnlyFields = document.getElementById('pointOnlyFields');
+  const captureSpeedGroup = document.getElementById('captureSpeedGroup');
+  const chartCaption = document.getElementById('chartCaption');
+
+  function sizeRoiCanvas(){
+    const rect = video.getBoundingClientRect();
+    roiCanvas.width = rect.width;
+    roiCanvas.height = rect.height;
+    drawTrackOverlay();
+  }
+
+  function getContentBox(){
+    // The video is displayed with object-fit:contain, so its actual pixel
+    // content is letterboxed inside the element's box. Compute that inner
+    // rectangle (in canvas CSS-pixel space) so coordinates map correctly.
+    const dispW = roiCanvas.width, dispH = roiCanvas.height;
+    const vw = video.videoWidth || dispW, vh = video.videoHeight || dispH;
+    const scale = Math.min(dispW/vw, dispH/vh);
+    const contentW = vw*scale, contentH = vh*scale;
+    return {
+      scale,
+      offsetX: (dispW - contentW)/2,
+      offsetY: (dispH - contentH)/2,
+      contentW, contentH,
+    };
+  }
+
+  function canvasToVideoPt(p){
+    const box = getContentBox();
+    return {
+      x: (p.x - box.offsetX) / box.scale,
+      y: (p.y - box.offsetY) / box.scale,
+    };
+  }
+  function videoToCanvasPt(p){
+    const box = getContentBox();
+    return { x: p.x*box.scale + box.offsetX, y: p.y*box.scale + box.offsetY };
+  }
+  function canvasToVideoRect(cssRect){
+    const box = getContentBox();
+    const vw = video.videoWidth || 0, vh = video.videoHeight || 0;
+    let x = Math.round((cssRect.x - box.offsetX) / box.scale);
+    let y = Math.round((cssRect.y - box.offsetY) / box.scale);
+    let w = Math.round(cssRect.w / box.scale);
+    let h = Math.round(cssRect.h / box.scale);
+    x = clamp(x, 0, vw-1);
+    y = clamp(y, 0, vh-1);
+    w = clamp(w, 1, vw-x);
+    h = clamp(h, 1, vh-y);
+    return {x,y,w,h};
+  }
+  function videoToCanvasRect(vRect){
+    const box = getContentBox();
+    return {
+      x: vRect.x*box.scale + box.offsetX,
+      y: vRect.y*box.scale + box.offsetY,
+      w: vRect.w*box.scale,
+      h: vRect.h*box.scale,
+    };
+  }
+
+  function drawTrackOverlay(){
+    roiCtx.clearRect(0,0,roiCanvas.width, roiCanvas.height);
+    if (trackMode === 'point'){
+      if (selecting && selStart && selCurrent){
+        const x = Math.min(selStart.x, selCurrent.x);
+        const y = Math.min(selStart.y, selCurrent.y);
+        const w = Math.abs(selCurrent.x - selStart.x);
+        const h = Math.abs(selCurrent.y - selStart.y);
+        strokeBox(x,y,w,h, 'rgba(94,234,212,0.9)', true);
+      } else if (roi){
+        const c = videoToCanvasRect(roi);
+        strokeBox(c.x, c.y, c.w, c.h, 'rgba(94,234,212,0.95)', false);
+      }
+    } else {
+      if (selecting && selStart && selCurrent){
+        const cCenter = selStart;
+        const r = Math.hypot(selCurrent.x-selStart.x, selCurrent.y-selStart.y);
+        strokeCircle(cCenter.x, cCenter.y, r, 'rgba(94,234,212,0.9)', true);
+      } else if (circleParams){
+        const cCanvas = videoToCanvasPt({x:circleParams.cx, y:circleParams.cy});
+        const box = getContentBox();
+        const rCanvas = circleParams.r * box.scale;
+        strokeCircle(cCanvas.x, cCanvas.y, rCanvas, 'rgba(94,234,212,0.95)', false);
+      }
+    }
+  }
+  function strokeBox(x,y,w,h,color,dashed){
+    roiCtx.save();
+    roiCtx.strokeStyle = color;
+    roiCtx.lineWidth = 2;
+    if (dashed) roiCtx.setLineDash([5,4]);
+    roiCtx.strokeRect(x,y,w,h);
+    roiCtx.setLineDash([]);
+    roiCtx.fillStyle = color;
+    const cx = x+w/2, cy = y+h/2;
+    roiCtx.fillRect(cx-1, y-6, 2, 6);
+    roiCtx.fillRect(cx-1, y+h, 2, 6);
+    roiCtx.fillRect(x-6, cy-1, 6, 2);
+    roiCtx.fillRect(x+w, cy-1, 6, 2);
+    roiCtx.restore();
+  }
+  function strokeCircle(cx,cy,r,color,dashed){
+    roiCtx.save();
+    roiCtx.strokeStyle = color;
+    roiCtx.lineWidth = 2;
+    if (dashed) roiCtx.setLineDash([5,4]);
+    roiCtx.beginPath();
+    roiCtx.arc(cx,cy,Math.max(r,2),0,Math.PI*2);
+    roiCtx.stroke();
+    // center crosshair
+    roiCtx.setLineDash([]);
+    roiCtx.beginPath();
+    roiCtx.moveTo(cx-7,cy); roiCtx.lineTo(cx+7,cy);
+    roiCtx.moveTo(cx,cy-7); roiCtx.lineTo(cx,cy+7);
+    roiCtx.stroke();
+    roiCtx.fillStyle = color;
+    roiCtx.beginPath(); roiCtx.arc(cx,cy,2.5,0,Math.PI*2); roiCtx.fill();
+    roiCtx.restore();
+  }
+
+  function pointerPos(e){
+    const rect = roiCanvas.getBoundingClientRect();
+    const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    return {x: clamp(cx,0,roiCanvas.width), y: clamp(cy,0,roiCanvas.height)};
+  }
+
+  function onSelStart(e){
+    if (autoRunning) return;
+    e.preventDefault();
+    selecting = true;
+    selStart = pointerPos(e);
+    selCurrent = selStart;
+    drawTrackOverlay();
+  }
+  function onSelMove(e){
+    if (!selecting) return;
+    e.preventDefault();
+    selCurrent = pointerPos(e);
+    drawTrackOverlay();
+  }
+  function onSelEnd(e){
+    if (!selecting) return;
+    selecting = false;
+
+    if (trackMode === 'point'){
+      const x = Math.min(selStart.x, selCurrent.x);
+      const y = Math.min(selStart.y, selCurrent.y);
+      let w = Math.abs(selCurrent.x - selStart.x);
+      let h = Math.abs(selCurrent.y - selStart.y);
+      if (w < 10 || h < 10){
+        const size = 34;
+        const ccx = selStart.x, ccy = selStart.y;
+        roi = canvasToVideoRect({x:ccx-size/2, y:ccy-size/2, w:size, h:size});
+      } else {
+        roi = canvasToVideoRect({x,y,w,h});
+      }
+    } else {
+      const rCanvas = Math.hypot(selCurrent.x-selStart.x, selCurrent.y-selStart.y);
+      if (rCanvas < 15){
+        // too small a drag to define a usable circle - ignore
+        drawTrackOverlay();
+        return;
+      }
+      const centerV = canvasToVideoPt(selStart);
+      const edgeV = canvasToVideoPt(selCurrent);
+      const box = getContentBox();
+      const rV = rCanvas / box.scale;
+      const theta0 = Math.atan2(edgeV.y-centerV.y, edgeV.x-centerV.x);
+      circleParams = {cx: centerV.x, cy: centerV.y, r: rV, theta0};
+    }
+    updateTrackingStatus();
+    drawTrackOverlay();
+  }
+
+  roiCanvas.addEventListener('mousedown', onSelStart);
+  roiCanvas.addEventListener('mousemove', onSelMove);
+  window.addEventListener('mouseup', onSelEnd);
+  roiCanvas.addEventListener('touchstart', onSelStart, {passive:false});
+  roiCanvas.addEventListener('touchmove', onSelMove, {passive:false});
+  roiCanvas.addEventListener('touchend', onSelEnd);
+
+  function updateTrackingStatus(){
+    const hasTarget = trackMode==='point' ? !!roi : !!circleParams;
+    if (hasTarget){
+      roiStatus.classList.add('set');
+      roiStatusText.textContent = trackMode==='point'
+        ? `Tracking point set (${roi.w}×${roi.h}px)`
+        : `Circle set (radius ${Math.round(circleParams.r)}px)`;
+      clearRoiBtn.disabled = false;
+      runAutoBtn.disabled = false;
+    } else {
+      roiStatus.classList.remove('set');
+      roiStatusText.textContent = trackMode==='point' ? 'No tracking point selected' : 'No circle selected';
+      clearRoiBtn.disabled = true;
+      runAutoBtn.disabled = true;
+    }
+  }
+  clearRoiBtn.addEventListener('click', ()=>{
+    roi = null;
+    circleParams = null;
+    updateTrackingStatus();
+    drawTrackOverlay();
+  });
+
+  // ---- mode toggle ----
+  modeToggle.querySelectorAll('.mode-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      if (autoRunning) return;
+      trackMode = btn.dataset.mode;
+      modeToggle.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      pointInstructions.style.display = trackMode==='point' ? 'block' : 'none';
+      circleInstructions.style.display = trackMode==='circle' ? 'block' : 'none';
+      ringThicknessField.style.display = trackMode==='circle' ? 'block' : 'none';
+      pointOnlyFields.style.display = trackMode==='point' ? 'block' : 'none';
+      roi = null; circleParams = null;
+      updateTrackingStatus();
+      drawTrackOverlay();
+      resetAutoDetectUI();
+    });
+  });
+  // set initial field visibility to match default mode ('circle')
+  pointInstructions.style.display = 'none';
+  circleInstructions.style.display = 'block';
+  ringThicknessField.style.display = 'block';
+  pointOnlyFields.style.display = 'none';
+
+  ringSlider.addEventListener('input', ()=>{ ringLabel.textContent = ringSlider.value + ' px'; });
+  sensSlider.addEventListener('input', ()=>{ sensLabel.textContent = parseFloat(sensSlider.value).toFixed(1) + '×'; });
+  gapSlider.addEventListener('input', ()=>{ gapLabel.textContent = parseFloat(gapSlider.value).toFixed(2) + ' s'; });
+
+  captureSpeedGroup.querySelectorAll('.cs-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      captureSpeedGroup.querySelectorAll('.cs-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      captureSpeed = parseFloat(btn.dataset.cs);
+    });
+  });
+
+  function resetAutoDetectUI(){
+    progressWrap.classList.remove('show');
+    chartWrap.classList.remove('show');
+    periodChartWrap.classList.remove('show');
+    adResult.classList.remove('show','warn');
+    stopAutoBtn.style.display = 'none';
+  }
+
+  // ---- offscreen sampling canvas ----
+  const sampleCanvas = document.createElement('canvas');
+  const sampleCtx = sampleCanvas.getContext('2d', {willReadFrequently:true});
+
+  function captureSample(t){
+    if (!roi) return;
+    const sw = clamp(roi.w, 6, 90), sh = clamp(roi.h, 6, 90);
+    if (sampleCanvas.width !== sw) sampleCanvas.width = sw;
+    if (sampleCanvas.height !== sh) sampleCanvas.height = sh;
+    try{
+      sampleCtx.drawImage(video, roi.x, roi.y, roi.w, roi.h, 0, 0, sw, sh);
+      const data = sampleCtx.getImageData(0,0,sw,sh).data;
+      let sum = 0;
+      const n = data.length/4;
+      for (let i=0;i<data.length;i+=4){
+        sum += 0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2];
+      }
+      signal.push({t, b: sum/n});
+    }catch(err){ /* cross-origin or decode hiccup - skip sample */ }
+  }
+
+  // ---- Adaptive tracker state (circle/smart-tracking mode) ----
+  let trackState = null;   // {cx,cy,r,theta,omega,lastT}
+  let trajectory = [];     // [{t,x,y}] raw tracked positions, refit to a circle afterwards
+
+  function initTracker(){
+    if (!circleParams) return;
+    const x0 = circleParams.cx + circleParams.r*Math.cos(circleParams.theta0);
+    const y0 = circleParams.cy + circleParams.r*Math.sin(circleParams.theta0);
+
+    // sample the object's reference color right where the user dropped the
+    // edge point, so the tracker can favor pixels that actually match the
+    // object's color instead of just "anything locally high-contrast"
+    // (which is what background clutter like grid lines/shadows can fake).
+    let refColor = null;
+    try{
+      const pr = 6;
+      const bx = Math.max(0, Math.floor(x0-pr)), by = Math.max(0, Math.floor(y0-pr));
+      const bw = Math.min((video.videoWidth||0)-bx, pr*2), bh = Math.min((video.videoHeight||0)-by, pr*2);
+      if (bw>1 && bh>1){
+        sampleCanvas.width=bw; sampleCanvas.height=bh;
+        sampleCtx.drawImage(video, bx,by,bw,bh, 0,0,bw,bh);
+        const d = sampleCtx.getImageData(0,0,bw,bh).data;
+        let r=0,g=0,b=0,n=0;
+        for (let i=0;i<d.length;i+=4){ r+=d[i]; g+=d[i+1]; b+=d[i+2]; n++; }
+        refColor = {r:r/n, g:g/n, b:b/n};
+      }
+    }catch(e){ /* fall back to contrast-only matching */ }
+
+    trackState = {
+      x: x0, y: y0,
+      vx: null, vy: null,   // smoothed velocity estimate (px/s) - used only for the very first search
+      angTheta: circleParams.theta0,
+      angOmega: null,       // smoothed angular velocity (rad/s) around circleParams' center
+      rSmooth: circleParams.r,
+      lastT: null,
+      lostStreak: 0,
+      refStrength: null,    // calibrated signal strength of the real object, once confirmed
+      totalAttempts: 0,
+      refColor,
+    };
+    trajectory = [];
+  }
+
+  // Right before capture starts, the video may have moved on from whatever
+  // frame was showing when the user dragged out the circle (especially if
+  // playback was already progressing, or the object moves fast). Re-locate
+  // the object at the actual start time with a generous search radius before
+  // committing to a starting position and reference color.
+  function reacquireTracker(){
+    if (!trackState || !circleParams) return;
+    const objSize = parseInt(ringSlider.value,10) || 18;
+    const wideR = Math.max(circleParams.r*1.15, 90);
+    const hit = localTrack(trackState.x, trackState.y, wideR, objSize, null);
+    if (hit){
+      trackState.x = hit.x;
+      trackState.y = hit.y;
+      trackState.refStrength = hit.strength;
+      // sample color at the CONFIRMED object location, not the raw click point
+      try{
+        const pr = 6;
+        const bx = Math.max(0, Math.floor(hit.x-pr)), by = Math.max(0, Math.floor(hit.y-pr));
+        const bw = Math.min((video.videoWidth||0)-bx, pr*2), bh = Math.min((video.videoHeight||0)-by, pr*2);
+        if (bw>1 && bh>1){
+          sampleCanvas.width=bw; sampleCanvas.height=bh;
+          sampleCtx.drawImage(video, bx,by,bw,bh, 0,0,bw,bh);
+          const d = sampleCtx.getImageData(0,0,bw,bh).data;
+          let r=0,g=0,b=0,n=0;
+          for (let i=0;i<d.length;i+=4){ r+=d[i]; g+=d[i+1]; b+=d[i+2]; n++; }
+          trackState.refColor = {r:r/n, g:g/n, b:b/n};
+        }
+      }catch(e){ /* keep whatever refColor initTracker already set */ }
+    }
+  }
+
+  // Locate the tracked object within a small window: score every pixel by how
+  // locally anomalous it is AND (if we have one) how well it matches the
+  // object's reference color, so background clutter that's merely
+  // high-contrast but the wrong color (e.g. grid lines) loses out to the
+  // actual object. Then refine to sub-pixel precision around the winner.
+  // Returns {x,y,strength} in VIDEO pixel space, or null if nothing stood out.
+  function localTrack(predX, predY, searchR, objSize, refColor){
+    const pad = Math.ceil(searchR + objSize/2) + 2;
+    const bx = Math.max(0, Math.floor(predX - pad));
+    const by = Math.max(0, Math.floor(predY - pad));
+    const bw = Math.min((video.videoWidth||0) - bx, Math.ceil(2*pad));
+    const bh = Math.min((video.videoHeight||0) - by, Math.ceil(2*pad));
+    if (bw <= 3 || bh <= 3) return null;
+
+    if (sampleCanvas.width !== bw) sampleCanvas.width = bw;
+    if (sampleCanvas.height !== bh) sampleCanvas.height = bh;
+
+    try{
+      sampleCtx.drawImage(video, bx, by, bw, bh, 0, 0, bw, bh);
+      const img = sampleCtx.getImageData(0,0,bw,bh).data;
+
+      let sum=0, count=0;
+      const bright = new Float32Array(bw*bh);
+      for (let py=0; py<bh; py++){
+        for (let px=0; px<bw; px++){
+          const idx=(py*bw+px)*4;
+          const b = 0.299*img[idx]+0.587*img[idx+1]+0.114*img[idx+2];
+          bright[py*bw+px]=b; sum+=b; count++;
+        }
+      }
+      const mean = sum/count;
+      const searchR2 = searchR*searchR;
+
+      // Stage 1: find the strongest (contrast x color-match) score in range
+      let bestPx=-1, bestPy=-1, bestDev=-Infinity, bestScore=-Infinity;
+      for (let py=0; py<bh; py++){
+        const gy = by+py, dy = gy-predY;
+        if (dy*dy > searchR2) continue;
+        for (let px=0; px<bw; px++){
+          const gx = bx+px, dx = gx-predX;
+          if (dx*dx+dy*dy > searchR2) continue;
+          const idx=(py*bw+px)*4;
+          const dev = Math.abs(bright[py*bw+px]-mean);
+          let colorMatch = 1;
+          if (refColor){
+            const cd = Math.sqrt(
+              (img[idx]-refColor.r)**2 + (img[idx+1]-refColor.g)**2 + (img[idx+2]-refColor.b)**2
+            );
+            colorMatch = Math.max(0.12, 1 - cd/140);
+          }
+          const score = dev*colorMatch;
+          if (score>bestScore){ bestScore=score; bestDev=dev; bestPx=px; bestPy=py; }
+        }
+      }
+      if (bestPx<0 || bestDev < 3) return null;
+
+      // Stage 2: sub-pixel refine via a small centroid around that winner only,
+      // so distant unrelated features can't pull the estimate off target.
+      const refineR = Math.max(3, Math.round(objSize/4));
+      let wx=0, wy=0, wsum=0;
+      const py0 = Math.max(0,bestPy-refineR), py1 = Math.min(bh,bestPy+refineR+1);
+      const px0 = Math.max(0,bestPx-refineR), px1 = Math.min(bw,bestPx+refineR+1);
+      for (let py=py0; py<py1; py++){
+        for (let px=px0; px<px1; px++){
+          const dev = Math.abs(bright[py*bw+px]-mean);
+          if (dev < bestDev*0.5) continue;
+          wx += (bx+px)*dev; wy += (by+py)*dev; wsum += dev;
+        }
+      }
+      if (!(wsum >= 1e-6)) return {x: bx+bestPx, y: by+bestPy, strength: bestDev};
+      return {x: wx/wsum, y: wy/wsum, strength: bestDev};
+    }catch(err){ return null; }
+  }
+
+  // A fixed capture region (established once per run) lets us diff frame t
+  // against frame t-1 at matching pixel coordinates - this is what actually
+  // makes a motion-blurred, fast-moving object stand out, since its static
+  // appearance in any single frame can be a faint smear, but the CHANGE
+  // between consecutive frames along its swept path is strong and reliable.
+  let fixedRegion = null;   // {bx,by,bw,bh} in video pixel space
+  let prevGraySnapshot = null;
+
+  function setupFixedRegion(){
+    if (!circleParams) { fixedRegion = null; return; }
+    const pad = circleParams.r*0.6 + 25;
+    const bx = Math.max(0, Math.floor(circleParams.cx - circleParams.r - pad));
+    const by = Math.max(0, Math.floor(circleParams.cy - circleParams.r - pad));
+    const bw = Math.min((video.videoWidth||0)-bx, Math.ceil(2*(circleParams.r+pad)));
+    const bh = Math.min((video.videoHeight||0)-by, Math.ceil(2*(circleParams.r+pad)));
+    fixedRegion = (bw>10 && bh>10) ? {bx,by,bw,bh} : null;
+    prevGraySnapshot = null;
+  }
+
+  // Model-free tracker: predicts the object's next position from its own recent
+  // velocity only (no assumed center/radius/shape), so it follows whatever path
+  // the object actually takes - circular, elliptical, drifting, or otherwise.
+  // Detection blends frame-to-frame change (handles motion blur) with
+  // single-frame contrast (handles crisp, slow-moving objects too).
+  function captureCircleSample(t){
+    if (!trackState || !fixedRegion) return;
+    const {bx,by,bw,bh} = fixedRegion;
+    const objSize = parseInt(ringSlider.value,10) || 18;
+    const dt = trackState.lastT!=null ? Math.max(t-trackState.lastT, 1/240) : (1/30);
+
+    let gray = null;
+    try{
+      if (sampleCanvas.width !== bw) sampleCanvas.width = bw;
+      if (sampleCanvas.height !== bh) sampleCanvas.height = bh;
+      sampleCtx.drawImage(video, bx, by, bw, bh, 0, 0, bw, bh);
+      const img = sampleCtx.getImageData(0,0,bw,bh).data;
+      gray = new Float32Array(bw*bh);
+      for (let i=0, n=bw*bh; i<n; i++){
+        const idx = i*4;
+        gray[i] = 0.299*img[idx] + 0.587*img[idx+1] + 0.114*img[idx+2];
+      }
+    }catch(e){ /* skip this frame */ }
+
+    let predX, predY, searchR;
+    if (trackState.angOmega == null || !circleParams){
+      predX = trackState.x; predY = trackState.y;
+      // Since we don't have an angular-velocity estimate yet, scale the net to
+      // the orbit size the user indicated - a fast spin can carry the object
+      // far even in the first frame, and a tiny fixed radius here would
+      // deadlock (never re-find it, so velocity never gets established either).
+      const scaleR = circleParams ? circleParams.r*0.75 : 0;
+      const base = Math.max(objSize*2.5, 40, scaleR);
+      searchR = Math.min(base * (1 + trackState.lostStreak*0.7), 380);
+    } else {
+      // Motion here is genuinely circular with large per-frame angular steps
+      // (fast spin) - extrapolating in a straight line along the last-seen
+      // velocity badly overshoots the true curved path. Predicting the next
+      // ANGLE around the orbit center and converting back to x/y follows the
+      // actual arc instead of its tangent, which matters a lot once the
+      // per-frame step is tens of degrees.
+      const thetaPred = trackState.angTheta + trackState.angOmega*dt;
+      predX = circleParams.cx + trackState.rSmooth*Math.cos(thetaPred);
+      predY = circleParams.cy + trackState.rSmooth*Math.sin(thetaPred);
+      const rCap = circleParams.r*0.9;
+      const rFloor = circleParams.r*0.55;
+      searchR = rFloor;
+      if (trackState.lostStreak > 0){
+        searchR = Math.min(rFloor * (1 + trackState.lostStreak*0.6), rCap*1.8);
+      }
+    }
+
+    let found = null;
+    if (gray){
+      // Once we have a previous frame, rely on frame-to-frame change alone -
+      // a static background feature (grid line, shirt wrinkle, watch) always
+      // has near-zero frame-diff, so it can never masquerade as the moving
+      // object here. Single-frame contrast is only a fallback for the very
+      // first sample, before any previous frame exists to diff against.
+      const useDiff = !!prevGraySnapshot;
+      const n = gray.length;
+      const scores = new Float32Array(n);
+      let mean = 0;
+      if (useDiff){
+        for (let i=0;i<n;i++){ scores[i] = Math.abs(gray[i]-prevGraySnapshot[i]); }
+      } else {
+        for (let i=0;i<n;i++) mean += gray[i];
+        mean /= n;
+        for (let i=0;i<n;i++){ scores[i] = Math.abs(gray[i]-mean); }
+      }
+
+      // Adaptive threshold via percentile: take the strongest ~2% of pixels
+      // in the whole fixed region as "the moving mass". A weighted centroid
+      // over many frames, combined with the circle fit done afterwards,
+      // averages out the per-frame noise from the string's own sweep -
+      // this simple approach is what actually recovered the correct period
+      // in offline reference analysis of this footage.
+      const sorted = Float32Array.from(scores).sort();
+      const pctIdx = Math.floor(n*0.98);
+      const threshold = Math.max(sorted[pctIdx], 6);
+
+      let wx=0, wy=0, wsum=0, count=0;
+      for (let py=0; py<bh; py++){
+        const rowBase = py*bw;
+        for (let px=0; px<bw; px++){
+          const s = scores[rowBase+px];
+          if (s < threshold) continue;
+          wx += (bx+px)*s; wy += (by+py)*s; wsum += s; count++;
+        }
+      }
+      if (wsum > 1e-6 && count >= 3){
+        found = {x: wx/wsum, y: wy/wsum, strength: wsum/count};
+      }
+    }
+
+    // A weak match (much fainter than the object's own established signal)
+    // is more likely a stray bit of background motion than the real mass -
+    // rejecting it and coasting on the prediction for one frame is safer
+    // than letting it pull the trajectory off course.
+    const strongEnough = found && (trackState.refStrength==null || found.strength >= trackState.refStrength*0.3);
+
+    if (strongEnough){
+      if (circleParams){
+        const newTheta = Math.atan2(found.y-circleParams.cy, found.x-circleParams.cx);
+        const newR = Math.hypot(found.x-circleParams.cx, found.y-circleParams.cy);
+        let dTheta = newTheta - trackState.angTheta;
+        dTheta = ((dTheta + Math.PI) % (2*Math.PI)) - Math.PI;
+        const instOmega = dTheta/dt;
+        trackState.angOmega = (trackState.angOmega==null) ? instOmega : (0.55*trackState.angOmega + 0.45*instOmega);
+        trackState.angTheta = newTheta;
+        trackState.rSmooth = 0.8*trackState.rSmooth + 0.2*newR;
+      }
+      trackState.x = found.x;
+      trackState.y = found.y;
+      trackState.lostStreak = 0;
+      trackState.refStrength = (trackState.refStrength==null) ? found.strength : (0.8*trackState.refStrength + 0.2*found.strength);
+      trajectory.push({t, x: found.x, y: found.y});
+    } else {
+      // couldn't confirm the object this frame - coast on the prediction and
+      // widen the search net on the next attempt in case we're drifting off track
+      trackState.x = predX;
+      trackState.y = predY;
+      if (circleParams){
+        trackState.angTheta = Math.atan2(predY-circleParams.cy, predX-circleParams.cx);
+      }
+      trackState.lostStreak++;
+    }
+    if (gray) prevGraySnapshot = gray;
+    trackState.lastT = t;
+    trackState.totalAttempts++;
+  }
+
+  let rvfcHandle = null;
+  let fallbackTimer = null;
+  let analysisEnd = 0;
+
+  function startCaptureLoop(){
+    const doCapture = trackMode==='point' ? captureSample : captureCircleSample;
+    if ('requestVideoFrameCallback' in HTMLVideoElement.prototype){
+      const step = (now, metadata) => {
+        if (stopRequested) return finishAutoDetect();
+        doCapture(metadata.mediaTime);
+        updateProgress(metadata.mediaTime);
+        if (metadata.mediaTime >= analysisEnd || video.paused || video.ended){
+          finishAutoDetect();
+        } else {
+          rvfcHandle = video.requestVideoFrameCallback(step);
+        }
+      };
+      rvfcHandle = video.requestVideoFrameCallback(step);
+    } else {
+      fallbackTimer = setInterval(()=>{
+        if (stopRequested){ clearInterval(fallbackTimer); return finishAutoDetect(); }
+        doCapture(video.currentTime);
+        updateProgress(video.currentTime);
+        if (video.currentTime >= analysisEnd || video.paused || video.ended){
+          clearInterval(fallbackTimer);
+          finishAutoDetect();
+        }
+      }, 33);
+    }
+  }
+
+  function updateProgress(t){
+    const startT = parseFloat(rangeStart.value)||0;
+    const pct = clamp(((t-startT)/(analysisEnd-startT))*100, 0, 100);
+    progressFill.style.width = pct.toFixed(0)+'%';
+    progressPct.textContent = pct.toFixed(0)+'%';
+    progressStatus.textContent = `Analyzing… ${fmtTime(t)}`;
+  }
+
+  runAutoBtn.addEventListener('click', ()=>{
+    const hasTarget = trackMode==='point' ? !!roi : !!circleParams;
+    if (!hasTarget || autoRunning) return;
+    const startT = clamp(parseFloat(rangeStart.value)||0, 0, video.duration);
+    analysisEnd = clamp(parseFloat(rangeEnd.value)||video.duration, startT+0.05, video.duration);
+    signal = [];
+    if (trackMode==='circle') initTracker();
+    stopRequested = false;
+    autoRunning = true;
+    runAutoBtn.disabled = true;
+    stopAutoBtn.style.display = 'inline-flex';
+    progressWrap.classList.add('show');
+    chartWrap.classList.remove('show');
+    periodChartWrap.classList.remove('show');
+    adResult.classList.remove('show','warn');
+    progressFill.style.width = '0%';
+    progressPct.textContent = '0%';
+
+    video.pause();
+    video.muted = true;
+    savedPlaybackRate = video.playbackRate;
+    video.playbackRate = captureSpeed;
+    video.currentTime = startT;
+    const onSeeked = ()=>{
+      video.removeEventListener('seeked', onSeeked);
+      if (trackMode==='circle'){ reacquireTracker(); setupFixedRegion(); }
+      video.play().then(startCaptureLoop).catch(()=>{
+        autoRunning = false;
+        video.playbackRate = savedPlaybackRate;
+        adResult.textContent = 'Could not start playback for analysis. Try pressing play once manually, then re-run Auto-detect.';
+        adResult.classList.add('show','warn');
+        resetRunButtons();
+      });
+    };
+    video.addEventListener('seeked', onSeeked);
+  });
+
+  stopAutoBtn.addEventListener('click', ()=>{ stopRequested = true; });
+
+  function resetRunButtons(){
+    runAutoBtn.disabled = trackMode==='point' ? !roi : !circleParams;
+    stopAutoBtn.style.display = 'none';
+    autoRunning = false;
+  }
+
+  function finishAutoDetect(){
+    if (!autoRunning) return; // guard against double-call
+    video.pause();
+    video.playbackRate = savedPlaybackRate;
+    resetRunButtons();
+    progressWrap.classList.remove('show');
+
+    if (trackMode === 'point'){
+      finishPointDetect();
+    } else {
+      finishCircleDetect();
+    }
+  }
+
+  function finishPointDetect(){
+    if (signal.length < 6){
+      adResult.textContent = 'Not enough data captured to detect revolutions. Try a wider tracking box or a longer time range.';
+      adResult.classList.add('show','warn');
+      return;
+    }
+    const minGap = parseFloat(gapSlider.value) || 0.2;
+    const sensitivity = parseFloat(sensSlider.value) || 1.2;
+    const peaks = detectPeaks(signal, minGap, sensitivity);
+
+    chartCaption.textContent = 'Brightness at tracking point over time — dots mark detected revolutions';
+    drawSignalChart(signal, peaks);
+    chartWrap.classList.add('show');
+
+    if (peaks.length < 2){
+      adResult.textContent = 'Fewer than 2 revolutions detected. Try lowering the sensitivity, widening the tracking box, or checking that the mass actually crosses the box each lap.';
+      adResult.classList.add('show','warn');
+      return;
+    }
+
+    marks = peaks.slice().sort((a,b)=>a-b);
+    renderMarks();
+    renderStats();
+    const n = marks.length - 1;
+    adResult.innerHTML = `Detected ${marks.length} crossings → ${n} revolution${n>1?'s':''} used to compute T. Review the marks log on the right, and add or remove points by hand if anything looks off.`;
+    adResult.classList.remove('warn');
+    adResult.classList.add('show');
+  }
+
+  // Algebraic (Kasa) circle fit: recovers the best-fit center/radius from the
+  // actual tracked trajectory, so an imperfect initial click or a wobbly path
+  // doesn't bias the result.
+  function fitCircle(points){
+    const n = points.length;
+    let sxx=0,sxy=0,syy=0,sx=0,sy=0,sxz=0,syz=0,sz=0;
+    for (const p of points){
+      const z = p.x*p.x + p.y*p.y;
+      sxx += p.x*p.x; sxy += p.x*p.y; syy += p.y*p.y;
+      sx += p.x; sy += p.y;
+      sxz += p.x*z; syz += p.y*z; sz += z;
+    }
+    // Solve the 3x3 normal-equations system [A B C]^T for x^2+y^2 = A x + B y + C
+    const M = [[sxx,sxy,sx],[sxy,syy,sy],[sx,sy,n]];
+    const v = [sxz,syz,sz];
+    const A = solve3(M, v);
+    if (!A) return null;
+    const cx = A[0]/2, cy = A[1]/2;
+    const r = Math.sqrt(A[2] + cx*cx + cy*cy);
+    if (!isFinite(r) || r<=0) return null;
+    return {cx, cy, r};
+  }
+  function solve3(M, v){
+    const [a,b,c] = M[0], [d,e,f] = M[1], [g,h,i] = M[2];
+    const det = a*(e*i-f*h) - b*(d*i-f*g) + c*(d*h-e*g);
+    if (Math.abs(det) < 1e-9) return null;
+    const inv = [
+      [(e*i-f*h)/det, (c*h-b*i)/det, (b*f-c*e)/det],
+      [(f*g-d*i)/det, (a*i-c*g)/det, (c*d-a*f)/det],
+      [(d*h-e*g)/det, (b*g-a*h)/det, (a*e-b*d)/det],
+    ];
+    return [
+      inv[0][0]*v[0]+inv[0][1]*v[1]+inv[0][2]*v[2],
+      inv[1][0]*v[0]+inv[1][1]*v[1]+inv[1][2]*v[2],
+      inv[2][0]*v[0]+inv[2][1]*v[1]+inv[2][2]*v[2],
+    ];
+  }
+
+  function finishCircleDetect(){
+    const attempted = trackState ? trackState.totalAttempts : trajectory.length;
+    const trackedFraction = attempted>0 ? trajectory.length/attempted : 0;
+
+    if (trajectory.length < 8){
+      let msg = 'Not enough of the mass was tracked to analyze rotation. Try a wider "object size" setting, a longer time range, or re-drawing the center/edge on a clearer frame.';
+      if (attempted>10 && trackedFraction<0.3){
+        msg += ' The mass may be spinning too fast for this video\'s frame rate to track reliably - try Point-crossing mode instead, or re-film in slow-motion if your camera supports it.';
+      }
+      adResult.textContent = msg;
+      adResult.classList.add('show','warn');
+      return;
+    }
+
+    const fitted = fitCircle(trajectory);
+    const useFit = fitted && isFinite(fitted.r) && fitted.r > 5;
+    const cx = useFit ? fitted.cx : circleParams.cx;
+    const cy = useFit ? fitted.cy : circleParams.cy;
+    const rFit = useFit ? fitted.r : circleParams.r;
+
+    // path quality: how far the tracked points stray from the fitted circle
+    let devSq = 0;
+    for (const p of trajectory){
+      const d = Math.hypot(p.x-cx, p.y-cy) - rFit;
+      devSq += d*d;
+    }
+    const rmsDev = Math.sqrt(devSq/trajectory.length);
+    const pathQualityPct = (rmsDev/rFit)*100;
+
+    const angleSig = trajectory.map(p => ({t: p.t, theta: Math.atan2(p.y-cy, p.x-cx)}));
+    const {marks: derivedMarks, r2, omega, unwrapped, theta0} = deriveMarksFromAngles(angleSig);
+
+    chartCaption.textContent = 'Cumulative rotation (revolutions) over time — a straight line means constant spin speed';
+    drawAngleChart(angleSig, unwrapped, omega, theta0);
+    chartWrap.classList.add('show');
+
+    if (derivedMarks.length < 2){
+      const totalRevs = Math.abs((unwrapped[unwrapped.length-1]-unwrapped[0])/(2*Math.PI));
+      periodChartWrap.classList.remove('show');
+      let msg = `Only tracked about ${totalRevs.toFixed(2)} revolutions in this range — not enough to compute a period. Try a longer time range, or check the mass was actually being tracked (see the chart above).`;
+      if (trajectory.length>25 && totalRevs<0.5){
+        msg += ' The mass may be spinning too fast for this video\'s frame rate to track reliably here - try Point-crossing mode instead, or re-film in slow-motion if your camera supports it.';
+      }
+      adResult.textContent = msg;
+      adResult.classList.add('show','warn');
+      return;
+    }
+
+    marks = derivedMarks;
+    renderMarks();
+    renderStats();
+
+    // per-revolution periods reveal speeding up / slowing down that a single average would hide
+    const perRevPeriods = [];
+    for (let i=1;i<marks.length;i++) perRevPeriods.push(marks[i]-marks[i-1]);
+    drawPeriodChart(perRevPeriods);
+    periodChartWrap.classList.add('show');
+
+    const meanP = perRevPeriods.reduce((a,b)=>a+b,0)/perRevPeriods.length;
+    const varP = perRevPeriods.reduce((a,b)=>a+(b-meanP)*(b-meanP),0)/perRevPeriods.length;
+    const cvPct = (Math.sqrt(varP)/meanP)*100;
+    const speedChanging = cvPct > 6;
+
+    const n = marks.length - 1;
+    const qClass = r2>0.995 ? '' : (r2>0.98 ? 'mid' : 'low');
+    const qLabel = r2>0.995 ? 'excellent fit' : (r2>0.98 ? 'good fit' : 'noisy fit');
+    const pathClass = pathQualityPct<3 ? '' : (pathQualityPct<8 ? 'mid' : 'low');
+    const pathLabel = pathQualityPct<3 ? 'clean circular path' : (pathQualityPct<8 ? 'slightly irregular path' : 'noisy/irregular path');
+
+    let msg = `Tracked ${(Math.abs(unwrapped[unwrapped.length-1]-unwrapped[0])/(2*Math.PI)).toFixed(2)} revolutions from ${trajectory.length} tracked frames → ${n} revolution${n>1?'s':''} used to compute T.` +
+      `<span class="fit-quality ${qClass}">R² = ${r2.toFixed(4)} · ${qLabel}</span>` +
+      `<span class="fit-quality ${pathClass}">path fit ${pathQualityPct.toFixed(1)}% · ${pathLabel}</span>`;
+    if (speedChanging){
+      msg += `<br><b>Rotation speed varies by about ${cvPct.toFixed(0)}% revolution-to-revolution</b> — see the period chart below. ` +
+             `If you need a single steady-state T, use the FROM/TO range above to select a more constant section and re-run.`;
+    } else {
+      msg += `<br>Review the marks log on the right, and add or remove points by hand if anything looks off.`;
+    }
+    adResult.innerHTML = msg;
+    adResult.classList.remove('warn');
+    adResult.classList.add('show');
+  }
+
+  // Simple smoothing (moving average) to reduce single-frame noise
+  function smooth(values, window){
+    const out = new Array(values.length);
+    const half = Math.floor(window/2);
+    for (let i=0;i<values.length;i++){
+      let s=0, c=0;
+      for (let k=-half;k<=half;k++){
+        const j=i+k;
+        if (j>=0 && j<values.length){ s+=values[j]; c++; }
+      }
+      out[i] = s/c;
+    }
+    return out;
+  }
+
+  function detectPeaks(sig, minGap, sensitivity){
+    const raw = sig.map(s=>s.b);
+    const smoothed = smooth(raw, 3);
+    const mean = smoothed.reduce((a,b)=>a+b,0)/smoothed.length;
+    const variance = smoothed.reduce((a,b)=>a+(b-mean)*(b-mean),0)/smoothed.length;
+    const std = Math.sqrt(variance);
+    const threshold = mean + sensitivity*std;
+
+    function interpTime(i, arr){
+      // parabolic sub-sample interpolation across (i-1, i, i+1) for sub-frame timing precision
+      if (i<=0 || i>=arr.length-1) return sig[i].t;
+      const y0=arr[i-1], y1=arr[i], y2=arr[i+1];
+      const denom = (y0 - 2*y1 + y2);
+      if (Math.abs(denom) < 1e-9) return sig[i].t;
+      const offset = clamp(0.5*(y0-y2)/denom, -1, 1);
+      const tPrev = sig[i-1].t, tNext = sig[i+1].t, tHere = sig[i].t;
+      // approximate local dt using neighbor spacing (handles slightly uneven frame timing)
+      const dtLeft = tHere - tPrev, dtRight = tNext - tHere;
+      return offset >= 0 ? tHere + offset*dtRight : tHere + offset*dtLeft;
+    }
+
+    const candidates = [];
+    for (let i=1;i<smoothed.length-1;i++){
+      if (smoothed[i] > threshold && smoothed[i] >= smoothed[i-1] && smoothed[i] >= smoothed[i+1]){
+        candidates.push({t: interpTime(i, smoothed), v: smoothed[i]});
+      }
+    }
+    const belowThreshold = mean - sensitivity*std;
+    const candidatesDown = [];
+    for (let i=1;i<smoothed.length-1;i++){
+      if (smoothed[i] < belowThreshold && smoothed[i] <= smoothed[i-1] && smoothed[i] <= smoothed[i+1]){
+        candidatesDown.push({t: interpTime(i, smoothed), v: mean - smoothed[i]});
+      }
+    }
+    const pool = candidatesDown.length > candidates.length
+      ? candidatesDown
+      : candidates.map(c=>({t:c.t, v:c.v-mean}));
+
+    pool.sort((a,b)=> b.v - a.v);
+    const accepted = [];
+    for (const c of pool){
+      if (accepted.every(a => Math.abs(a.t - c.t) >= minGap)){
+        accepted.push(c);
+      }
+    }
+    accepted.sort((a,b)=> a.t - b.t);
+    return accepted.map(a=>a.t);
+  }
+
+  // ---- circle-mode: angle unwrapping + linear regression ----
+  function deriveMarksFromAngles(sig){
+    const n = sig.length;
+    const unwrapped = new Array(n);
+    unwrapped[0] = sig[0].theta;
+    for (let i=1;i<n;i++){
+      let d = sig[i].theta - sig[i-1].theta;
+      while (d > Math.PI) d -= 2*Math.PI;
+      while (d < -Math.PI) d += 2*Math.PI;
+      unwrapped[i] = unwrapped[i-1] + d;
+    }
+
+    let sumT=0, sumTh=0, sumTT=0, sumTTh=0;
+    for (let i=0;i<n;i++){
+      sumT += sig[i].t; sumTh += unwrapped[i];
+      sumTT += sig[i].t*sig[i].t; sumTTh += sig[i].t*unwrapped[i];
+    }
+    const denom = n*sumTT - sumT*sumT;
+    const omega = denom !== 0 ? (n*sumTTh - sumT*sumTh)/denom : 0;
+    const theta0 = (sumTh - omega*sumT)/n;
+
+    let ssRes=0, ssTot=0;
+    const meanTh = sumTh/n;
+    for (let i=0;i<n;i++){
+      const pred = omega*sig[i].t + theta0;
+      ssRes += (unwrapped[i]-pred)*(unwrapped[i]-pred);
+      ssTot += (unwrapped[i]-meanTh)*(unwrapped[i]-meanTh);
+    }
+    const r2 = ssTot>0 ? 1-(ssRes/ssTot) : 0;
+
+    const marksOut = [];
+    if (Math.abs(omega) > 1e-6){
+      const thetaStart = unwrapped[0], thetaEnd = unwrapped[n-1];
+      const dir = omega >= 0 ? 1 : -1;
+      const kStart = dir>0 ? Math.ceil(thetaStart/(2*Math.PI)) : Math.floor(thetaStart/(2*Math.PI));
+      const kEnd   = dir>0 ? Math.floor(thetaEnd/(2*Math.PI))   : Math.ceil(thetaEnd/(2*Math.PI));
+      for (let k=kStart; dir>0 ? k<=kEnd : k>=kEnd; k+=dir){
+        const target = k*2*Math.PI;
+        for (let i=1;i<n;i++){
+          const a = unwrapped[i-1], b = unwrapped[i];
+          if ((a-target)*(b-target) <= 0 && a!==b){
+            const frac = (target-a)/(b-a);
+            marksOut.push(sig[i-1].t + frac*(sig[i].t-sig[i-1].t));
+            break;
+          }
+        }
+      }
+    }
+    marksOut.sort((a,b)=>a-b);
+    return {marks: marksOut, r2, omega, theta0, unwrapped};
+  }
+
+  function drawSignalChart(sig, peaks){
+    const ctx = signalChart.getContext('2d');
+    const W = signalChart.width, H = signalChart.height;
+    ctx.clearRect(0,0,W,H);
+    if (sig.length < 2) return;
+
+    const tMin = sig[0].t, tMax = sig[sig.length-1].t;
+    const values = sig.map(s=>s.b);
+    const vMin = Math.min(...values), vMax = Math.max(...values);
+    const pad = 6;
+    const xOf = t => pad + (t-tMin)/(tMax-tMin||1) * (W-2*pad);
+    const yOf = v => H-pad - (v-vMin)/((vMax-vMin)||1) * (H-2*pad);
+
+    ctx.strokeStyle = '#5EEAD4';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    sig.forEach((s,i)=>{
+      const x = xOf(s.t), y = yOf(s.b);
+      if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+
+    ctx.fillStyle = '#FFB454';
+    peaks.forEach(t=>{
+      let nearest = sig[0], best = Infinity;
+      for (const s of sig){ const d=Math.abs(s.t-t); if (d<best){best=d; nearest=s;} }
+      const x = xOf(t), y = yOf(nearest.b);
+      ctx.beginPath();
+      ctx.arc(x,y,3,0,Math.PI*2);
+      ctx.fill();
+    });
+  }
+
+  function drawAngleChart(sig, unwrapped, omega, theta0){
+    const ctx = signalChart.getContext('2d');
+    const W = signalChart.width, H = signalChart.height;
+    ctx.clearRect(0,0,W,H);
+    if (sig.length < 2) return;
+
+    const revs = unwrapped.map(a=>a/(2*Math.PI));
+    const tMin = sig[0].t, tMax = sig[sig.length-1].t;
+    const vMin = Math.min(...revs), vMax = Math.max(...revs);
+    const pad = 6;
+    const xOf = t => pad + (t-tMin)/((tMax-tMin)||1) * (W-2*pad);
+    const yOf = v => H-pad - (v-vMin)/((vMax-vMin)||1) * (H-2*pad);
+
+    // fitted regression line (should hug the data if spin speed is constant)
+    ctx.strokeStyle = '#FFB454';
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.moveTo(xOf(tMin), yOf((omega*tMin+theta0)/(2*Math.PI)));
+    ctx.lineTo(xOf(tMax), yOf((omega*tMax+theta0)/(2*Math.PI)));
+    ctx.stroke();
+
+    // raw measured angle points
+    ctx.fillStyle = 'rgba(94,234,212,0.85)';
+    sig.forEach((s,i)=>{
+      const x = xOf(s.t), y = yOf(revs[i]);
+      ctx.beginPath();
+      ctx.arc(x,y,1.5,0,Math.PI*2);
+      ctx.fill();
+    });
+  }
+
+  function drawPeriodChart(periods){
+    const ctx = periodChart.getContext('2d');
+    const W = periodChart.width, H = periodChart.height;
+    ctx.clearRect(0,0,W,H);
+    if (periods.length < 1) return;
+
+    const pad = 8;
+    const vMin = Math.min(...periods)*0.9, vMax = Math.max(...periods)*1.1;
+    const barW = (W-2*pad)/periods.length;
+    const yOf = v => H-pad - (v-vMin)/((vMax-vMin)||1) * (H-2*pad);
+
+    periods.forEach((p,i)=>{
+      const x = pad + i*barW;
+      const y = yOf(p);
+      const grad = ctx.createLinearGradient(0,y,0,H-pad);
+      grad.addColorStop(0, '#5EEAD4');
+      grad.addColorStop(1, 'rgba(94,234,212,0.25)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(x+1, y, Math.max(barW-2,1), (H-pad)-y);
+    });
+
+    // mean line for reference
+    const mean = periods.reduce((a,b)=>a+b,0)/periods.length;
+    ctx.strokeStyle = 'rgba(255,180,84,0.85)';
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([4,3]);
+    ctx.beginPath();
+    ctx.moveTo(pad, yOf(mean));
+    ctx.lineTo(W-pad, yOf(mean));
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  renderMarks();
+  renderStats();
+})();
+</script>
+</body>
+</html>
